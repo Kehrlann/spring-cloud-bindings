@@ -58,11 +58,9 @@ public final class SpringSecurityOAuth2BindingsPropertiesProcessor implements Bi
             map.from("client-secret").to(String.format("spring.security.oauth2.client.registration.%s.client-secret", clientName));
             map.from("client-authentication-method").to(String.format("spring.security.oauth2.client.registration.%s.client-authentication-method", clientName));
             map.from("authorization-grant-type").to(String.format("spring.security.oauth2.client.registration.%s.authorization-grant-type", clientName));
-            if (binding.getSecret().containsKey("authorization-grant-types")
-                    && binding.getSecret().get("authorization-grant-types").split(",").length == 1
-            ) {
-                map.from("authorization-grant-types").toIfAbsent(String.format("spring.security.oauth2.client.registration.%s.authorization-grant-type", clientName));
-            }
+            map.from("authorization-grant-types")
+                    .when(SpringSecurityOAuth2BindingsPropertiesProcessor::hasSingleValue)
+                    .toIfAbsent(String.format("spring.security.oauth2.client.registration.%s.authorization-grant-type", clientName));
             map.from("redirect-uri").to(String.format("spring.security.oauth2.client.registration.%s.redirect-uri", clientName));
             map.from("scope").to(String.format("spring.security.oauth2.client.registration.%s.scope", clientName));
             map.from("client-name").to(String.format("spring.security.oauth2.client.registration.%s.client-name", clientName));
@@ -74,6 +72,15 @@ public final class SpringSecurityOAuth2BindingsPropertiesProcessor implements Bi
             map.from("jwk-set-uri").to(String.format("spring.security.oauth2.client.provider.%s.jwk-set-uri", provider));
             map.from("user-name-attribute").to(String.format("spring.security.oauth2.client.provider.%s.user-name-attribute", provider));
         });
+    }
+
+    private static boolean hasSingleValue(Object value) {
+        return Optional.ofNullable(value)
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .map(s -> s.split(","))
+                .filter(r -> r.length == 1)
+                .isPresent();
     }
 
     @Override
